@@ -31,9 +31,9 @@ e seu backend configurado em PHP.
 :ferris_wheel:<br>
 1- Para rodar o projeto, crie uma pasta de nome crud em htdocs do xampp e depois
 coloque os arquivos php nos htdocs do xampp. Abra o servidor do xampp e
-execute o sql da pasta do projeto. 
+execute o sql da pasta do projeto. <br>
 2- Vá ao arquivo conexão.php e edite os campos DIGITE AS SUAS CREDENCIAIS 
-com as credenciais do seu mysql.
+com as credenciais do seu mysql.<br>
 3- Depois Rode o arquivo estático index.html, ele vai fazer a comunicação com o localhost
 servido pelos arquivos php. 
 
