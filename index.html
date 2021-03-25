@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <link href="https://fonts.googleapis.com/css?family=Roboto:100,300,400,500,700,900" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/@mdi/font@4.x/css/materialdesignicons.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/vuetify@2.x/dist/vuetify.min.css" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@500&display=swap" rel="stylesheet"> 
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, minimal-ui">
+  <meta charset="UTF-8">
+</head>
+<style>
+  .swal2-title, .swal2-confirm, .swal2-cancel {
+    font-family: 'Noto Sans JP', sans-serif;
+  
+}
+#swal2-title{
+  font-size: 14px  !important;
+}
+.center-button{
+  text-align: center;
+}
+.button-style{
+  background-color: #011f4b !important;
+}
+.editar, .deletar,.button-style{
+  color:wheat  !important;
+}
+</style>
+<body>
+  <div id="app">
+    <v-app>
+      <v-main>
+        <v-card class="mx auto mt-5 " >
+              <v-container class='center-button'>
+                <v-btn class="button-style" rounded @click="NovoForm()">Criar</v-btn>
+              </v-container>
+
+              <v-card>
+                <v-card-title>
+                  Clientes
+                  <v-spacer></v-spacer>
+                  <v-text-field
+                    v-model="search"
+                    append-icon="mdi-magnify"
+                    label="Search"
+                    single-line
+                    hide-details
+                  ></v-text-field>
+                </v-card-title>
+                  <v-data-table
+                    :headers="headers"
+                    :items="clientes"
+                    :search="search"
+                    :key="cliente.cpf"
+                  >
+                  
+                  <template v-slot:item.controls="props">
+                    <v-btn class="editar purple darken-1" @click="EditarForm(props.item.cpf, props.item.nome, props.item.nascimento, props.item.celular, props.item.email, props.item.endereco)" >✏️Editar</v-btn>
+                    <v-btn class='deletar pink accent-2' @click='DeletarForm(props.item.cpf)'>💣Deletar</v-btn>
+                  </template>
+                </v-data-table>
+              
+
+              </v-card>
+              <v-dialog v-model="dialog" max-width="500">        
+                <v-card>
+                  <v-card-title class="blue-grey darken-1 white--text">Inserir/Editar Cliente</v-card-title>    
+                  <v-card-text>            
+                    <v-form
+                        @submit="CheckForm"
+                      >
+                      <v-row>
+                        <v-col cols="12">
+                          <v-text-field v-model="cliente.nome" label="Nome" solo required>{{cliente.Nome}}</v-text-field>
+                        </v-col>
+                              
+                        <v-col cols="12">
+                          <v-text-field v-model="cliente.nascimento" label="nascimento" solo required>{{cliente.nascimento}}</v-text-field> 
+                        </v-col>
+
+                        <v-col cols="12" md="4">
+                          <v-text-field v-model="cliente.cpf" label="Cpf" solo required>{{cliente.Cpf}}</v-text-field>
+                        </v-col>
+                              
+                        <v-col cols="12" md="4">
+                          <v-text-field v-model="cliente.celular" label="Celular" solo required>{{cliente.Celular}}</v-text-field>
+                        </v-col>
+                              
+                        <v-col cols="12" md="4">
+                          <v-text-field v-model="cliente.email" label="Email" solo required>{{cliente.Email}}</v-text-field>
+                        </v-col>
+                        <v-col cols="12" >
+                          <v-text-field v-model="cliente.endereco" label="Endereco" solo required>{{cliente.endereco}}</v-text-field>
+                        </v-col>
+                        <v-col cols="12" >
+                          <v-textarea v-model="cliente.observacao"  label="Observacao" solo required>{{cliente.observacao}}</v-textarea>
+                        </v-col>
+                      </v-row>
+                      <v-btn @click="dialog=false">Cancelar</v-btn>
+                      <v-btn type="submit" value="submit" color="indigo" dark>Salvar</v-btn>
+
+                      </v-form>
+                </v-card>
+              </v-dialog>
+            
+        </v-card>
+      </v-main>
+    </v-app>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/vue@2.x/dist/vue.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vuetify@2.x/dist/vuetify.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.21.1/axios.min.js" integrity="sha512-bZS47S7sPOxkjU/4Bt0zrhEtWx0y0CRkhEp8IckzK+ltifIIE9EMIMTuT/mEzoIMewUINruDBIR/jJnbguonqQ==" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@10.0.2/dist/sweetalert2.all.min.js"></script>
+  <script>
+    let url="http://localhost/crud/crud.php";
+    new Vue({
+      el: '#app',
+      vuetify: new Vuetify(),
+      data(){
+          return{
+              //Inicialização de variáveis
+              clientes:[],
+              dialog:false,
+              operation:'',
+              search: '',
+              //Cabeçalho da tabela
+              headers: [
+                {
+                  text: 'Nome',
+                  align: 'start',
+                  sortable: true,
+                  value: 'nome',
+                  
+                },
+                { text: 'Nascimento', value: 'nascimento' },
+                { text: 'CPF', value: 'cpf' },
+                { text: 'Celular', value: 'celular' },
+                { text: 'Email', value: 'email' },
+                { text: "endereco", value: 'endereco'},
+                { text: "observacao", value: 'observacao'},
+                { text: "", value: "controls", sortable: false },
+                
+              ],
+              //Criação do objeto cliente
+              cliente:{
+                nome:"",
+                nascimento:"",
+                cpf:null,
+                celular:"",
+                email:"",
+                endereco:"",
+                observacao:""
+              }
+          }
+      },
+      created(){
+        //Quando criado é feita uma requisição ajax para 
+        //"popular" as tabelas 
+        this.mostrarDados()
+      },
+
+      methods:{
+        //Função para limpar os dados que poderiam estar sendo utilizados em outra situação 
+        limparDados: function(){
+          this.cliente.cpf="";
+          this.cliente.nome="";
+          this.cliente.nascimento="";
+          this.cliente.celular="";
+          this.cliente.email="";
+          this.cliente.endereco="";
+          this.cliente.observacao="";
+        },
+        mostrarDados: function(){
+          axios.post(url,{opcao:1})
+          .then(res =>{
+            //Testando o retorno da request AJAX 
+            //console.log(res.data);
+            this.clientes = res.data;
+          })
+        },
+        criar:function(){                
+          axios.post(url, {opcao:2, cpf:this.cliente.cpf, nome:this.cliente.nome, nascimento:this.cliente.nascimento, celular:this.cliente.celular, email:this.cliente.email, endereco: this.cliente.endereco, observacao: this.cliente.observacao}
+          //Quando retornar a response, popular os dados
+          ).then(response =>{
+              //console.log(res.data);
+              Swal.fire('Criado com sucesso!', '', 'success');
+              this.mostrarDados();
+          });   
+          this.limparDados();
+        },  
+        editar:function(cpf,nome,nascimento,celular,email,endereco,observacao){
+          axios.post(url,{opcao:3,cpf:this.cliente.cpf, nome:this.cliente.nome, nascimento:this.cliente.nascimento, celular:this.cliente.celular, email:this.cliente.email, endereco:this.cliente.endereco, observacao: this.cliente.observacao}
+          //Quando retornar a response, popular os dados
+          ).then(res=>{
+            //console.log(res.data);
+            Swal.fire('Editado com sucesso!', '', 'success');
+            this.mostrarDados()
+          });
+          this.limparDados();
+        },
+        
+        Inserir: function(){
+          if(this.operation==="criar"){
+            //Quando a operação for de criação, chamar a função criar e depois limpar dados remanescentes
+            this.criar();
+          }
+          if(this.operation==="editar"){
+             //Quando a operação for de edição, chamar a função criar e depois limpar dados remanescentes
+            this.editar();
+          }
+         
+          this.dialog=false;
+        },
+        NovoForm: function(){
+          //Abertura de um dialog com o formulário de cadastro
+          //console.log(this.erros);
+          this.dialog=true;
+          this.operation="criar";
+          this.limparDados();
+        },
+        EditarForm: function(cpf,nome,nascimento,celular,email,endereco,observacao){
+          //Testando CPF
+          //console.log(cpf);
+          //Puxando variáveis da table row e inserindo no cliente e transitando para a operação editar 
+          this.cliente.cpf = cpf;
+          this.cliente.nome = nome;
+          this.cliente.nascimento = nascimento;
+          this.cliente.celular = celular;
+          this.cliente.endereco = endereco;
+          this.cliente.email = email;
+          this.cliente.observacao = observacao;
+          this.dialog=true;
+          this.operation='editar';
+        },
+        DeletarForm: function(cpf){
+          //Puxamos a chave primária cpf para fazer a deleção
+          //Utilizando o sweet alert para deixar a interface mais bonita e também para a confirmação
+          Swal.fire({
+                title: 'Confirme a deleção do cliente',   
+                confirmButtonText: `Confirmar`,    
+                cancelButtonText: 'Cancelar',              
+                showCancelButton: true,                          
+              }).then((result) => {    
+                //Se o usuário confirmar a opção então é feito uma request no axios
+                //para fazer a deleção            
+                if (result.isConfirmed) {      
+                      axios.post(url, {opcao:4,cpf:cpf}).then(response =>{           
+                          this.mostrarDados();
+                       });      
+                  Swal.fire('Deletado com sucesso!', '', 'success')
+                } else if (result.isDenied) {  }
+              });              
+          
+        },
+
+        TestaCPF: function(cpf){
+          //Teste de cpf retirado da receita federal
+          cpf = cpf.replace(/\D/g, '');
+          if(cpf.toString().length != 11 || /^(\d)\1{10}$/.test(cpf)) return false;
+          var result = true;
+          [9,10].forEach(function(j){
+              var soma = 0, r;
+              cpf.split(/(?=)/).splice(0,j).forEach(function(e, i){
+                  soma += parseInt(e) * ((j+2)-(i+1));
+              });
+              r = soma % 11;
+              r = (r <2)?0:11-r;
+              if(r != cpf.substring(j, j+1)) result = false;
+          });
+          return result;
+        },
+        
+        
+
+        CheckForm: function (e) {
+          //Checando o formulário e impedindo de dar submit
+          let erros = [this.cliente.nome, this.cliente.nascimento, this.cliente.cpf,this.cliente.celular, this.cliente.email,this.cliente.endereco,this.cliente.observacao];
+          console.log("Nasc" + this.cliente.nascimento);
+          let nomeErros = ["Nome","Data de Nascimento ", "Cpf","Celular","Email","Endereco","Observação"]
+          let AlertErros = "";
+          
+          //Regex Caracteres Especiais
+          const regex = /[!@#$%^&*(),.?":{}|<>]/g;
+
+          //Checagem feita de maneira dinâmica, poderão ser adicionados 
+          //outros atributos sem retrabalho ao desenvolvedor
+          for(let i=0; i<erros.length;i++){
+            if (!erros[i] || erros[i]==="" || erros[i].length >= 300  ) {
+              AlertErros+=`${nomeErros[i]} Obrigatório. Ou nome com mais de 300 caractéres\n`;
+            }
+            //Checando o primeiro valor da array de erros e checando caracteres especiais
+            if(i==0){
+              if(regex.test(erros[i])){
+                AlertErros+=`${nomeErros[i]} Inválido com caracteres especiais\n`;
+              }
+            }
+            //Checando o segundo valor da array de erros
+            if(i==2){
+              console.log("Aqui");
+              //Puxando a função de testar cpf e testando
+              console.log(this.TestaCPF(erros[i]));
+              if(this.TestaCPF(erros[i])){
+                console.log("Válido" );
+              }else{
+                AlertErros+=`Cpf Inválido \n`;
+              }
+            }
+          }
+
+         //Se o código não retornar erros, então o programa procede para criação ou edição do conteúdo 
+         if(AlertErros!=""){
+            Swal.fire(
+             AlertErros,
+            )
+          }else{
+              //Checando a operação
+              if(this.operation=='criar'){
+                this.criar();                
+              }
+              if(this.operation=='editar'){ 
+                this.editar();                           
+              }
+              this.dialog=false; 
+          }
+
+          
+          e.preventDefault();
+        }
+            
+      }
+    })
+  </script>
+</body>
+</html>
